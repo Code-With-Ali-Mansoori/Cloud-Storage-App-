@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import UserProfile from "../UserProfile";
+import UserProfile from "../Pages/AdminViewPage/UserProfile";
 
 const Header = ({ currentUser, goTo, backTo }) => {
   const navigate = useNavigate();
