@@ -1,0 +1,248 @@
+import { Router } from "express";
+import {
+  abortFileUpload,
+  changePermission,
+  changePermissionOfUser,
+  completeFileUpload,
+  deleteFile,
+  getDashboardInfo,
+  getFileById,
+  getFileInfoById,
+  getPresignedPartUploadURL,
+  getSharedByMeFiles,
+  getSharedFileViaEmail,
+  getSharedFileViaLink,
+  getSharedWithMeFiles,
+  getUserAccessList,
+  importFromDrive,
+  initiateFileUpload,
+  renameFile,
+  renameFileSharedViaEmail,
+  revokeUserAccess,
+  shareLinkToggle,
+  shareViaEmail,
+  shareViaLink,
+} from "../controllers/fileControllers";
+import { checkFileAccess } from "../middlewares/checkFileAccess";
+import { checkFileSharedViaEmail } from "../middlewares/checkFileShare";
+import { serveFile } from "../middlewares/serveFile";
+import validateRequest from "../middlewares/validateRequest";
+
+// Import the limiters, Throttlers
+import { limiter } from "../utils/RateLimiter";
+import { throttler } from "../utils/Throttler";
+
+const router = Router();
+
+["id", "fileId", "userId"].forEach((param: string) =>
+  router.param(param, validateRequest as any)
+);
+
+// GET /file/:id
+// Desc -> Retrieve a file by ID.
+// Params -> { id }
+router.get(
+  "/:id",
+  limiter.fileAccessLimiter,
+  throttler.fileAccessThrottler,
+  getFileById,
+  serveFile
+);
+
+// POST /file/upload/initiate
+// Desc -> Checks validations and return presigned S3 URL
+// Body -> { name: string, size: number, contentType: string, parentDirId: "<optional; defaults to req.user.rootDirId>, isMultipart: boolean }
+router.post("/upload/initiate", initiateFileUpload);
+
+// GET /file/upload/part-url/:fileId
+// Desc -> Generate presigned URL for uploading a part in multipart upload
+// Params -> { fileId }
+router.get("/upload/part-url/:fileId", getPresignedPartUploadURL);
+
+// POST /file/upload/complete/:fileId
+// Desc -> Completes the necessary S3 Validations and change the DB state.
+// Params -> { fileId }
+router.post("/upload/complete/:fileId", completeFileUpload);
+
+// POST /file/upload/abort/:fileId
+// Desc -> Aborts a multipart upload and cleans up S3 objects.
+// Params -> { fileId }
+router.post("/upload/abort/:fileId", abortFileUpload);
+
+// DELETE /file/:id
+// Desc -> Delete a file by ID.
+// Params -> { id }
+router.delete("/:id", limiter.fileDeleteLimiter, deleteFile);
+
+// PATCH /file/:id
+// Desc -> Rename a file.
+// Params -> { id }
+// Body -> { name: string }
+router.patch(
+  "/:id",
+  limiter.fileRenameLimiter,
+  throttler.fileRenameThrottler,
+  renameFile
+);
+
+// ---------------- File Sharing Routes (Owner Only) -------------------------
+
+// POST /file/share/:fileId/email
+// Desc -> Share a file with multiple users via email.
+// Params -> { fileId }
+// Body -> { users: string[] }
+router.post(
+  "/share/:fileId/email",
+  limiter.shareEmailLimiter,
+  checkFileAccess,
+  shareViaEmail
+);
+
+// POST /file/share/:fileId/link
+// Desc -> Share a file via public link.
+// Params -> { fileId }
+// Body -> { permission: string }
+router.post(
+  "/share/:fileId/link",
+  limiter.shareLinkLimiter,
+  checkFileAccess,
+  shareViaLink
+);
+
+// PATCH /file/share/:fileId/link/toggle
+// Desc -> Enable or disable public link sharing.
+// Params -> { fileId }
+// Body -> { enabled: boolean }
+router.patch(
+  "/share/:fileId/link/toggle",
+  limiter.shareLinkToggleLimiter,
+  throttler.shareLinkToggleThrottler,
+  checkFileAccess,
+  shareLinkToggle
+);
+
+// PATCH /file/share/:fileId/link/permission
+// Desc -> Change permission level for public link access.
+// Params -> { fileId }
+// Body -> { permission: string }
+router.patch(
+  "/share/:fileId/link/permission",
+  limiter.sharePermissionLimiter,
+  throttler.sharePermissionThrottler,
+  checkFileAccess,
+  changePermission
+);
+
+// GET /file/share/access/:fileId/list
+// Desc -> Retrieve the list of users who have access to the file.
+// Params -> { fileId }
+router.get(
+  "/share/access/:fileId/list",
+  limiter.shareAccessListLimiter,
+  throttler.shareAccessListThrottler,
+  checkFileAccess,
+  getUserAccessList
+);
+
+// GET /file/info/:fileId
+// Desc -> Retrieve detailed file information.
+// Params -> { fileId }
+router.get(
+  "/info/:fileId",
+  limiter.fileInfoLimiter,
+  throttler.fileInfoThrottler,
+  checkFileAccess,
+  getFileInfoById
+);
+
+// PATCH /file/share/update/permission/:userId/:fileId
+// Desc -> Update the permission of a shared user.
+// Params -> { fileId, userId }
+// Body -> { permission: string }
+router.patch(
+  "/share/update/permission/:userId/:fileId",
+  limiter.sharePermissionLimiter,
+  checkFileAccess,
+  changePermissionOfUser
+);
+
+// PATCH /file/share/access/revoke/:userId/:fileId
+// Desc -> Revoke access from a shared user.
+// Params -> { fileId, userId }
+router.patch(
+  "/share/access/revoke/:userId/:fileId",
+  limiter.shareRevokeAccessLimiter,
+  checkFileAccess,
+  revokeUserAccess
+);
+
+// ---------------- File Accessing Routes -------------------------
+
+// GET /file/share/access/:fileId/link
+// Desc -> Access a shared file via public link.
+// Params -> { fileId }
+// Query -> { token: string }
+router.get(
+  "/share/access/:fileId/link",
+  limiter.sharedFileAccessLimiter,
+  getSharedFileViaLink,
+  serveFile
+);
+
+// GET /file/share/access/:fileId/email
+// Desc -> Access a shared file via email share.
+// Params -> { fileId }
+router.get(
+  "/share/access/:fileId/email",
+  limiter.sharedFileAccessLimiter,
+  getSharedFileViaEmail,
+  serveFile
+);
+
+// GET /file/share/dashboard
+// Desc -> Retrieve sharing dashboard information (totals, recent shares).
+router.get(
+  "/share/dashboard",
+  limiter.dashboardLimiter,
+  throttler.dashboardThrottler,
+  getDashboardInfo
+);
+
+// GET /file/share/by-me
+// Desc -> Retrieve files shared by the current user.
+router.get(
+  "/share/by-me",
+  limiter.sharedFilesLimiter,
+  throttler.sharedFilesThrottler,
+  getSharedByMeFiles
+);
+
+// GET /file/share/with-me
+// Desc -> Retrieve files shared with the current user.
+router.get(
+  "/share/with-me",
+  limiter.sharedFilesLimiter,
+  throttler.sharedFilesThrottler,
+  getSharedWithMeFiles
+);
+
+// ---------------- Editor Routes -------------------------
+
+// PATCH /file/share/edit/:fileId
+// Desc -> Rename a file shared through Mail (allowed for editors).
+// Params -> { fileId }
+// Body -> { name: string }
+router.patch(
+  "/share/edit/:fileId",
+  limiter.editorRenameLimiter,
+  throttler.editorRenameThrottler,
+  checkFileSharedViaEmail,
+  renameFileSharedViaEmail
+);
+
+// POST /file/drive-import
+// Desc -> Import all files from google Drive
+// Body -> { token: string, filesMetaData: Array, fileForUploading: object }
+router.post("/drive-import", importFromDrive);
+
+export default router;
