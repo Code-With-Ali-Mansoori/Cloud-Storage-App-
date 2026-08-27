@@ -55,6 +55,7 @@ const handleNewSubscriptionCreation = async (userId: string, planId: string, sta
     endDate: null,
     startDate: null,
     invoiceId: null,
+    invoiceURL: null,
     status: status,
   });
 

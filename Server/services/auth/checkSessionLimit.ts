@@ -12,7 +12,7 @@ export const checkSessionLimit = async (userId: string): Promise<void> => {
       RETURN: [],
     }
   )) as any;
-
+  
   const maxDevices = user?.maxDevices || 1;
   if (userSessions.total >= maxDevices) {
     const loginToken = crypto.randomUUID();

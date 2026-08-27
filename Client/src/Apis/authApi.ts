@@ -1,7 +1,7 @@
 import axios from "./axios";
 import { ApiResponse } from "../types";
 
-export const googleAuth = async (code: string): Promise<ApiResponse> => {
+export const googleAuth = async (code : string): Promise<ApiResponse> => {
   try {
     const response = await axios.post("/auth/google", { code });
     return response.data;

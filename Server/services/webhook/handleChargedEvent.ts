@@ -1,4 +1,5 @@
 import Subscription from "../../models/subscriptionModel";
+import { fetchRazorpayInvoiceUrl } from "../subscription/fetchInvoiceUrl";
 
 
 export default async function handleChargedEvent(eventBody: any): Promise<string> {
@@ -17,9 +18,13 @@ export default async function handleChargedEvent(eventBody: any): Promise<string
   }
 
   // Update billing cycle info
+  const invoiceId = eventBody.payload.payment.entity.invoice_id;
+  const invoiceURL = invoiceId
+    ? await fetchRazorpayInvoiceUrl(invoiceId)
+    : null;
   subscriptionDoc.currentPeriodStart = new Date(webhookSubscription.current_start * 1000);
   subscriptionDoc.currentPeriodEnd = new Date(webhookSubscription.current_end * 1000);
-  subscriptionDoc.invoiceId = eventBody.payload.payment.entity.invoice_id;
+  subscriptionDoc.set({ invoiceId, invoiceURL });
   subscriptionDoc.status = "active"; // incase of renewal_retry
   await subscriptionDoc.save();
 

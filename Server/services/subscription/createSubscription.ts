@@ -66,6 +66,8 @@ export default async function createSubscription(userId: string, planId: string)
       await Subscription.findByIdAndUpdate(subscriptionDoc._id, {
         planId: planId,
         razorpaySubscriptionId: subscription.id,
+        invoiceId: null,
+        invoiceURL: null,
       });
 
       return {
@@ -98,6 +100,7 @@ export default async function createSubscription(userId: string, planId: string)
     endDate: null,
     startDate: null,
     invoiceId: null,
+    invoiceURL: null,
     status: "created",
   });
 

@@ -50,6 +50,10 @@ const subscriptionSchema = new Schema(
       type: String,
       default: null,
     },
+    invoiceURL: {
+      type: String,
+      default: null,
+    },
     cancelledAt: {
       type: Date,
       default: null,

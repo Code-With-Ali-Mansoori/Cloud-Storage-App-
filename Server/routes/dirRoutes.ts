@@ -24,7 +24,7 @@ router.get("/:id", getDir);
 // Params  -> { parentDirId?: string }
 // Headers -> { dirname: string }
 router.post(
-  "/:parentDirId?",
+  "/{/:parentDirId}",
   limiter.createDirLimiter,
   throttler.createDirThrottler,
   createDir

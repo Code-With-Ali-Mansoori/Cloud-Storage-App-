@@ -39,9 +39,10 @@ export const rootPath = import.meta.dirname;
 
 // Create Express App
 const app = express();
-const allowedOrigins = (process.env.CLIENT_URLS || "").split(",").map((url) =>
-  url.trim()
-);
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/^['"]|['"]$/g, "").replace(/\/$/, ""))
+  .filter(Boolean);
 
 // Adding Security Headers
 app.use(
@@ -110,7 +111,8 @@ app.get("/", (req, res) => {
 // Error Handler
 app.use(errorHandler);
 
-app.listen(process.env.SERVER_PORT, () => {
-  console.log("Server running on port " + process.env.SERVER_PORT);
+app.listen(process.env.PORT, () => {
+  console.log(`http://localhost:${process.env.PORT}`);
+  console.log("Server running on port " + process.env.PORT);
   startCronJobs();
 });

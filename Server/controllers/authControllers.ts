@@ -53,7 +53,7 @@ export const redirectToAuthURL = async (req: Request, res: Response): Promise<vo
   const clientOrigin = referer ? new URL(referer).origin : null;
   const { state: githubState, url } = githubClient.getWebFlowAuthorizationUrl({
     scopes: ["read:user", "user:email"],
-    redirectUrl: `https://api.storemystuff.cloud/auth/github/callback`,
+    redirectUrl: `http://localhost:4000/auth/github/callback`,
   });
 
   const combinedState = Buffer.from(

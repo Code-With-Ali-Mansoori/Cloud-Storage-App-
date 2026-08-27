@@ -6,7 +6,7 @@ export interface AdminHeaderProps {
   currentUser: any;
   goTo: string;
   backTo: string;
-}
+};
 
 const Header: React.FC<AdminHeaderProps> = ({ currentUser, goTo, backTo }) => {
   const navigate = useNavigate();

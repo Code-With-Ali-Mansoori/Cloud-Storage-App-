@@ -3,6 +3,7 @@ import User from "../../models/userModel";
 import { razorpayInstance } from "../../services/razorpayService";
 import { getPlanDetailsById } from "../../utils/getPlanDetails";
 import { sendEventToUser } from "../../controllers/EventController";
+import { fetchRazorpayInvoiceUrl } from "../subscription/fetchInvoiceUrl";
 
 export default async function handleActivatedEvent(eventBody: any): Promise<string> {
   const webhookSubscription = eventBody.payload.subscription.entity;
@@ -41,6 +42,10 @@ export default async function handleActivatedEvent(eventBody: any): Promise<stri
   }
 
   // update the user subscription document
+  const invoiceId = eventBody.payload.payment.entity.invoice_id;
+  const invoiceURL = invoiceId
+    ? await fetchRazorpayInvoiceUrl(invoiceId)
+    : null;
   const updateSubscriptionDoc = await Subscription.findOneAndUpdate(
     {
       userId,
@@ -52,7 +57,8 @@ export default async function handleActivatedEvent(eventBody: any): Promise<stri
       currentPeriodEnd: webhookSubscription.current_end * 1000,
       startDate: webhookSubscription.start_at * 1000,
       endDate: webhookSubscription.end_at * 1000,
-      invoiceId: eventBody.payload.payment.entity.invoice_id,
+      invoiceId,
+      invoiceURL,
     },
     {
       new: true,
