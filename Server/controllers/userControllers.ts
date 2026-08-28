@@ -112,9 +112,9 @@ export const getSettingDetails = async (req: any, res: Response, next: NextFunct
     picture,
     maxStorageLimit,
   } = req.user;
-  const rootDir = await Directory.findById(req.user.rootDirId)
-    .select("size")
-    .lean();
+  const rootDir = req.user.rootDirId
+    ? await Directory.findById(req.user.rootDirId).select("size").lean()
+    : null;
   const usedStorage = rootDir?.size || 0;
   const settings = {
     name,
@@ -125,7 +125,7 @@ export const getSettingDetails = async (req: any, res: Response, next: NextFunct
     socialProvider: createdWith === "email" ? null : createdWith,
     maxStorageLimit,
     usedStorageLimit: usedStorage,
-    availableStorageLimit: maxStorageLimit - usedStorage,
+    availableStorageLimit: (maxStorageLimit || 0) - usedStorage,
   };
   return CustomSuccess.send(res, "", StatusCodes.OK, settings);
 };
@@ -172,7 +172,7 @@ export const updateProfile = async (req: any, res: Response, next: NextFunction)
   const userId = req.user._id;
   const file = req.file;
   try {
-    const sanitizedName = sanitizeInput(name);
+    const sanitizedName = sanitizeInput(typeof name === "string" ? name : "");
     await UserServices.UpdateProfileService(userId, file, sanitizedName);
     return CustomSuccess.send(res, "Profile Updated.", StatusCodes.OK);
   } catch (error) {

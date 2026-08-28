@@ -274,16 +274,19 @@ const updateProfileService = async (userId: string, file: any, name: string): Pr
   }
 
   if (file && file.filename) {
+    const bucketName = process.env.AWS_BUCKET;
+    const bucketRegion = process.env.AWS_REGION || "us-east-1";
+    const s3BaseUrl = bucketName
+      ? `https://${bucketName}.s3.${bucketRegion}.amazonaws.com`
+      : "";
+
     // Delete old image from S3
-    const cfUrl = process.env.CLOUDFRONT_PROFILE_URL || "";
-    if (user.picture?.includes(cfUrl)) {
-      const oldKey = user.picture.split(
-        cfUrl + "/"
-      )[1];
+    if (user.picture && s3BaseUrl && user.picture.includes(s3BaseUrl)) {
+      const oldKey = user.picture.split(s3BaseUrl + "/")[1];
       if (oldKey) {
         await s3Client.send(
           new DeleteObjectCommand({
-            Bucket: process.env.AWS_BUCKET,
+            Bucket: bucketName,
             Key: oldKey,
           })
         );
@@ -294,16 +297,17 @@ const updateProfileService = async (userId: string, file: any, name: string): Pr
     const fileBuffer = await fs.readFile(filePath);
     const ext = path.extname(file.originalname);
     const newKey = `profilePictures/${userId}-${Date.now()}${ext}`;
+    
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET,
+        Bucket: bucketName,
         Key: newKey,
         Body: fileBuffer,
         ContentType: file.mimetype,
       })
     );
     await fs.unlink(filePath);
-    user.picture = `${process.env.CLOUDFRONT_PROFILE_URL}/${newKey}`;
+    user.picture = s3BaseUrl ? `${s3BaseUrl}/${newKey}` : "";
   }
 
   await user.save();

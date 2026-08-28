@@ -14,6 +14,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     console.error("-> Server Error:", {
       name: err.name,
       message: err.message,
+      details: err.details,
       stack: err.stack,
       statusCode,
       timestamp: err.timestamp || new Date().toISOString(),

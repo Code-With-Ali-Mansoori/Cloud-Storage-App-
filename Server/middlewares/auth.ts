@@ -25,7 +25,20 @@ export default async function checkAuth(req: Request & { user?: any }, res: Resp
   }
 
   const user = await User.findById(session.userId).select("-password").lean();
-  if (user?.isDeleted)
+  if (!user) {
+    res.clearCookie("token", {
+      httpOnly: true,
+      signed: true,
+      sameSite: "lax",
+    });
+
+    throw new CustomError(
+      "No active session found",
+      StatusCodes.UNAUTHORIZED
+    );
+  }
+
+  if (user.isDeleted)
     throw new CustomError(
       "User is deactivated or deleted.",
       StatusCodes.FORBIDDEN

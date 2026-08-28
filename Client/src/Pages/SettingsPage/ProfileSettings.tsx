@@ -70,7 +70,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         </h3>
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 space-x-4 sm:gap-5">
           <img
-            src={imagePreview || profileData.picture}
+            src={imagePreview || profileData.picture || undefined}
             alt="User Profile"
             className="rounded-full w-20 h-20 sm:w-24 sm:h-24 object-cover border-2 border-gray-200 mx-auto sm:mx-0"
           />

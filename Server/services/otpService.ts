@@ -83,15 +83,20 @@ const otpTemplate = (otp: number | string): string => {
 
 export const sendOTPService = async (email: string, otp: number | string): Promise<any> => {
   try {
-    const res = await resend.emails.send({
-      from: "StoreMyStuff <no-reply@storemystuff.cloud>",
+    const { data, error } = await resend.emails.send({
+      from: "onboarding@resend.dev",
       to: [email],
       subject: "Your OTP for Authentication",
       html: otpTemplate(otp),
     });
 
-    return res;
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
   } catch (error: any) {
+    console.log(error?.message);
     throw new CustomError(
       "Error while sending email",
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -99,5 +104,8 @@ export const sendOTPService = async (email: string, otp: number | string): Promi
         details: error?.message || String(error),
       }
     );
+
+    
+    
   }
 };
