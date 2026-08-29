@@ -5,7 +5,7 @@ import User from "../models/userModel";
 import CustomError from "../utils/ErrorResponse";
 
 export default async function checkAuth(req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> {
-  const { token } = req.signedCookies;
+  const token = req.signedCookies?.token ?? req.cookies?.token;
 
   if (!token)
     throw new CustomError("No active session found", StatusCodes.UNAUTHORIZED);

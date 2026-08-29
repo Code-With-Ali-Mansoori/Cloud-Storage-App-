@@ -23,10 +23,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(res.data);
         setIsAuth(true);
       } else {
+        setUser(null);
         setIsAuth(false);
       }
     } catch (error) {
       console.log("Error while checking Authentication: ", error);
+      setUser(null);
       setIsAuth(false);
     }
   };

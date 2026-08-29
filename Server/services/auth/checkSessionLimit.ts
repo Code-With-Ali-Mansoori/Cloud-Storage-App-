@@ -5,16 +5,27 @@ import User from "../../models/userModel";
 
 export const checkSessionLimit = async (userId: string): Promise<void> => {
   const user = await User.findById(userId).select("maxDevices").lean();
-  const userSessions = (await redisClient.ft.search(
-    "userIdIdx",
-    `@userId:{${userId}}`,
-    {
-      RETURN: [],
+
+  let userSessionsTotal = 0;
+  try {
+    const userSessions = (await redisClient.ft.search(
+      "userIdIdx",
+      `@userId:{${userId}}`,
+      {
+        RETURN: [],
+      }
+    )) as any;
+    userSessionsTotal = userSessions.total || 0;
+  } catch (error: any) {
+    const message = error?.message || String(error);
+    if (!message.includes("Index not found") && !message.includes("Unknown index name")) {
+      throw error;
     }
-  )) as any;
-  
+    console.warn("Redis index userIdIdx not found during session count; treating as 0 sessions.");
+  }
+
   const maxDevices = user?.maxDevices || 1;
-  if (userSessions.total >= maxDevices) {
+  if (userSessionsTotal >= maxDevices) {
     const loginToken = crypto.randomUUID();
     await redisClient.set(
       `temp_login_token:${loginToken}`,

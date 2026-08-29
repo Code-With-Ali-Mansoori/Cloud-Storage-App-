@@ -8,7 +8,28 @@ export interface OpenRazorpayPopupOptions {
   razorpayMode?: "live" | "test" | string;
 }
 
+const getRazorpayKey = (mode?: string) => {
+  const normalizedMode = (mode || "test").toLowerCase();
+
+  if (normalizedMode === "live") {
+    const liveKey = import.meta.env.VITE_RAZORPAY_LIVE_KEY_ID;
+    if (!liveKey) throw new Error("Missing VITE_RAZORPAY_LIVE_KEY_ID in client env");
+    return liveKey;
+  }
+
+  const testKey = import.meta.env.VITE_RAZORPAY_TEST_KEY_ID;
+  if (!testKey) throw new Error("Missing VITE_RAZORPAY_TEST_KEY_ID in client env");
+  return testKey;
+};
+
 export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: OpenRazorpayPopupOptions) {
+  if (typeof Razorpay === "undefined") {
+    toast.error("Razorpay SDK is not loaded", {
+      description: "Please refresh the page and try again.",
+    });
+    return;
+  }
+
   let waitingToastId: string | number | null = null;
   const eventSource = new EventSource(
     `${import.meta.env.VITE_BACKEND_URL}/events?userId=${userId}`
@@ -47,10 +68,7 @@ export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: Open
   };
 
   const rzp = new Razorpay({
-    key:
-      razorpayMode === "live"
-        ? "rzp_live_RStZdfYFCYNQL7"
-        : "rzp_test_Ra0B5WI7uIwO1z",
+    key: getRazorpayKey(razorpayMode),
     name: "Storage App",
     description: "Subscribe to premium storage plan",
     image: "https://dzdw2zccyu2wu.cloudfront.net/overview/readme-typing.svg",

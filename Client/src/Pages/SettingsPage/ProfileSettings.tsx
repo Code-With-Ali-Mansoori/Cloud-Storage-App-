@@ -1,6 +1,7 @@
 import { Camera, Save, Upload, User } from "lucide-react";
 import React from "react";
 import { UpdateUserSettings } from "../../Apis/userApi";
+import { useAuth } from "../../Contexts/AuthContext";
 import { useModal } from "../../Contexts/ModalContext";
 import { ProfileData } from "../../hooks/useUserSettings";
 
@@ -28,6 +29,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   hasProfileChanges,
 }) => {
   const { showModal } = useModal();
+  const { checkAuthentication, setUser } = useAuth();
 
   const handleProfileUpdate = async () => {
     const formData = new FormData();
@@ -37,7 +39,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     formData.append("name", profileData.name);
     const res = await UpdateUserSettings(formData);
     if (res.success) {
-      showModal("Success", "Profile updated successfully!", "success");
+      await checkAuthentication();
       setSelectedImage(null);
       setImagePreview(null);
       setOriginalProfileData({
@@ -51,6 +53,17 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           picture: imagePreview,
         }));
       }
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: profileData.name,
+              picture: imagePreview || prev.picture || profileData.picture,
+            }
+          : prev
+      );
+      showModal("Success", "Profile updated successfully!", "success");
     } else {
       showModal("Error", "Failed to update profile.", "error");
     }

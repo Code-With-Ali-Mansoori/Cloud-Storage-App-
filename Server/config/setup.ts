@@ -6,10 +6,10 @@ import { connectDB } from "./db";
 const rootPath = import.meta.dirname;
 
 function ensureProfilePicturesFolder() {
-  const folderPath = path.join(rootPath, "..", "profilePictures");
+  const folderPath = path.join(rootPath, "profilePictures");
   if (!fs.existsSync(folderPath)) {
     fs.mkdirSync(folderPath, { recursive: true });
-    console.log("✔ profilePictures folder created at /src/profilePictures");
+    console.log("✔ profilePictures folder created at /Server/profilePictures");
   } else {
     console.log("✔ profilePictures folder already exists");
   }

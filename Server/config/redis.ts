@@ -15,6 +15,27 @@ const redisClient: any = createClient({
   },
 });
 
+async function ensureUserSessionIndex() {
+  try {
+    await redisClient.ft.create(
+      "userIdIdx",
+      {
+        "$.userId": { type: "TAG", AS: "userId" },
+      },
+      {
+        ON: "JSON",
+        PREFIX: "session:",
+      }
+    );
+    console.log("✅ Redis search index userIdIdx created");
+  } catch (err: any) {
+    const message = err?.message || String(err);
+    if (!message.toLowerCase().includes("already exists")) {
+      console.error("Failed to create Redis search index:", message);
+    }
+  }
+}
+
 // Handle connection errors gracefully
 redisClient.on("error", (err: any) => {
   console.error("❗ Redis Client Error:", err.message);
@@ -25,6 +46,7 @@ redisClient.on("error", (err: any) => {
 try {
   await redisClient.connect();
   console.log("✅ Redis Connected");
+  await ensureUserSessionIndex();
 } catch (err: any) {
   console.error("Initial Redis connection failed:", err.message);
 }

@@ -73,7 +73,7 @@ app.post(
 // Middlewares
 app.use("/profilePictures", express.static("profilePictures"));
 app.use(express.json());
-app.use(cookieParser(secretKey));
+app.use(cookieParser(secretKey || undefined));
 
 app.use(
   cors({

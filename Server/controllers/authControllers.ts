@@ -91,7 +91,12 @@ export const loginWithGithub = async (req: any, res: Response, next: NextFunctio
 
     return res.redirect(`${clientOrigin}/`);
   } catch (error: any) {
-    const fallback = process.env.DEFAULT_CLIENT_URL;
+    const fallback = (
+      process.env.DEFAULT_CLIENT_URL ||
+      process.env.CLIENT_URL ||
+      "http://localhost:5173"
+    ).replace(/\/$/, "");
+
     if (error?.details?.sessionLimitExceed) {
       return res.redirect(
         `${fallback}/auth/error?temp_token=${encodeURIComponent(

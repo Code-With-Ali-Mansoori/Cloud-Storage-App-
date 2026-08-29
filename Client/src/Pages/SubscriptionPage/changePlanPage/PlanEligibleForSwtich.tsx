@@ -22,7 +22,8 @@ const PlanEligibleForSwtich: React.FC<PlanEligibleForSwitchProps> = ({ plansElig
     setLoadingPlanId(planId);
     const res = await changePlan(planId);
     if (res.success && res.data && user) {
-      const url = `https://payments.kunalkhandekar.me?subscriptionId=${res.data.newSubscriptionId}&userId=${user._id}`;
+      const baseUrl = window.location.origin || "http://localhost:5173";
+      const url = `${baseUrl}/plans?subscriptionId=${res.data.newSubscriptionId}&userId=${user._id}`;
       setRedirectUrl(url);
       setShowRedirectModal(true);
     } else {

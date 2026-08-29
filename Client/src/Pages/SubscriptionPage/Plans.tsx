@@ -165,7 +165,8 @@ const Plans: React.FC<PlansProps> = ({ hasActivePlan }) => {
       const res = await handleCreateSubscription(planId);
       if (res.success && res.data && user?._id) {
         const subscriptionId = res.data.subscriptionId;
-        const url = `https://payments.kunalkhandekar.me?subscriptionId=${subscriptionId}&userId=${user._id}`;
+        const baseUrl = window.location.origin || "http://localhost:5173";
+        const url = `${baseUrl}/plans?subscriptionId=${subscriptionId}&userId=${user._id}`;
         setRedirectUrl(url);
         setShowRedirectModal(true);
       }
