@@ -190,14 +190,8 @@ const validations = [
             description:
               "parentDirId must be a valid ObjectId referencing the parent directory",
           },
-          googleFileId: {
-            bsonType: "string",
-          },
           originalKey: {
             bsonType: "string",
-          },
-          pdfKey: {
-            bsonType: ["string", "null"],
           },
           sharedViaLink: {
             bsonType: "object",

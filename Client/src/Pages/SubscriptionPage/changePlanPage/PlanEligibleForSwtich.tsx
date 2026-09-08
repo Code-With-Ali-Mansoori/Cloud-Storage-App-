@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { changePlan } from "../../../Apis/subscriptionApi";
 import { useAuth } from "../../../Contexts/AuthContext";
 import { monthlyPlans, yearlyPlans, PlanItem } from "../Plans";
-import RedirectModal from "../../../components/Modals/RedirectModal";
+import { openRazorpayPopup } from "../../../Utils/openRazorpayPopup";
 
 export interface PlanEligibleForSwitchProps {
   plansEligible: string[];
@@ -13,8 +13,6 @@ export interface PlanEligibleForSwitchProps {
 
 const PlanEligibleForSwtich: React.FC<PlanEligibleForSwitchProps> = ({ plansEligible = [], activePlan }) => {
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
-  const [showRedirectModal, setShowRedirectModal] = useState<boolean>(false);
-  const [redirectUrl, setRedirectUrl] = useState<string>("");
   const { user } = useAuth();
   const modeKey = (user?.razorpayMode as "live" | "test") || "test";
 
@@ -22,10 +20,11 @@ const PlanEligibleForSwtich: React.FC<PlanEligibleForSwitchProps> = ({ plansElig
     setLoadingPlanId(planId);
     const res = await changePlan(planId);
     if (res.success && res.data && user) {
-      const baseUrl = window.location.origin || "http://localhost:5173";
-      const url = `${baseUrl}/plans?subscriptionId=${res.data.newSubscriptionId}&userId=${user._id}`;
-      setRedirectUrl(url);
-      setShowRedirectModal(true);
+      openRazorpayPopup({
+        subscriptionId: res.data.newSubscriptionId,
+        userId: user._id,
+        razorpayMode: user.razorpayMode,
+      });
     } else {
       toast.error(res.message || "Failed to change plan");
     }
@@ -37,11 +36,6 @@ const PlanEligibleForSwtich: React.FC<PlanEligibleForSwitchProps> = ({ plansElig
       plansEligible.includes(plan.id[modeKey])
     );
   }, [plansEligible, modeKey]);
-
-  const handleCloseModal = () => {
-    setShowRedirectModal(false);
-    setRedirectUrl("");
-  };
 
   return (
     <>
@@ -190,12 +184,6 @@ const PlanEligibleForSwtich: React.FC<PlanEligibleForSwitchProps> = ({ plansElig
           </div>
         )}
       </div>
-      {/* Redirect Modal */}
-      <RedirectModal
-        isOpen={showRedirectModal}
-        onClose={handleCloseModal}
-        redirectUrl={redirectUrl}
-      />
     </>
   );
 };

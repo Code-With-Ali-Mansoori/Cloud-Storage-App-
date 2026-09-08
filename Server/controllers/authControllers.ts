@@ -6,6 +6,8 @@ import { sanitizeObject } from "../utils/sanitizeInput";
 import { setCookie } from "../utils/setCookie";
 import CustomSuccess from "../utils/SuccessResponse";
 import { validateInputs } from "../utils/ValidateInputs";
+import redisClient from "../config/redis";
+import User from "../models/userModel";
 import {
   loginValidations,
   registerValidations,
@@ -33,6 +35,31 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   } catch (error) {
     next(error);
   }
+};
+
+export const getSessionStatus = async (req: Request, res: Response): Promise<any> => {
+  const token = req.signedCookies?.token ?? req.cookies?.token;
+
+  if (!token) {
+    return res.status(StatusCodes.OK).json({ success: false, data: null });
+  }
+
+  const session = (await redisClient.json.get(`session:${token}`)) as { userId?: string } | null;
+  const user = session?.userId
+    ? await User.findById(session.userId).select("-password").lean()
+    : null;
+
+  if (!user || user.isDeleted) {
+    res.clearCookie("token", {
+      httpOnly: true,
+      signed: Boolean(process.env.COOKIE_SECRET),
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    return res.status(StatusCodes.OK).json({ success: false, data: null });
+  }
+
+  return res.status(StatusCodes.OK).json({ success: true, data: user });
 };
 
 export const loginWithGoogle = async (req: Request, res: Response, next: NextFunction): Promise<any> => {

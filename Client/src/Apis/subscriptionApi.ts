@@ -1,12 +1,18 @@
 import axios from "./axios";
 import { ApiResponse } from "../types";
 
-export const handleCreateSubscription = async (planId: string): Promise<ApiResponse> => {
+export const handleCreateSubscription = async (planId : string): Promise<ApiResponse> => {
   try {
     const response = await axios.post(`/subscription/create`, { planId });
+
+    console.log(response.data);
+
     return { success: true, ...response.data };
+
   } catch (error: any) {
+    console.log(error);
     return error?.response?.data || { success: false, message: error.message };
+
   }
 };
 
@@ -42,6 +48,15 @@ export const changePlan = async (planId: string): Promise<ApiResponse> => {
 export const plansEligibleforChange = async (): Promise<ApiResponse> => {
   try {
     const response = await axios.get(`/subscription/change-eligibility`);
+    return { success: true, ...response.data };
+  } catch (error: any) {
+    return error?.response?.data || { success: false, message: error.message };
+  }
+};
+
+export const confirmSubscription = async (subscriptionId: string): Promise<ApiResponse> => {
+  try {
+    const response = await axios.post(`/subscription/confirm`, { subscriptionId });
     return { success: true, ...response.data };
   } catch (error: any) {
     return error?.response?.data || { success: false, message: error.message };

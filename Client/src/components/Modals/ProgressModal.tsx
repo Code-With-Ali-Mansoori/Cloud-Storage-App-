@@ -17,16 +17,16 @@ const ProgressModal: React.FC<ProgressModalProps> = ({ closeModal, isCompleted =
   };
 
   const getTitle = () => {
-    if (isCompleted) return "Import Complete!";
-    if (error) return "Import Failed";
-    return "Importing from Google Drive";
+    if (isCompleted) return "Upload Complete!";
+    if (error) return "Upload Failed";
+    return "Uploading files";
   };
 
   const getMessage = () => {
     if (isCompleted)
-      return "Your files have been successfully imported and are ready to use.";
+      return "Your files have been successfully uploaded and are ready to use.";
     if (error) return error;
-    return "Please wait while we securely import your files. This process typically takes 2–3 minutes.";
+    return "Please wait while we securely upload your files.";
   };
 
   return (

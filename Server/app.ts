@@ -39,6 +39,7 @@ export const rootPath = import.meta.dirname;
 
 // Create Express App
 const app = express();
+
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
   .split(",")
   .map((url) => url.trim().replace(/^['"]|['"]$/g, "").replace(/\/$/, ""))
@@ -72,8 +73,14 @@ app.post(
 
 // Middlewares
 app.use("/profilePictures", express.static("profilePictures"));
-app.use(express.json());
-app.use(cookieParser(secretKey || undefined));
+app.use(
+  express.json({
+    verify: (req, _res, buffer) => {
+      (req as typeof req & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+    },
+  })
+);
+app.use(cookieParser(secretKey || process.env.COOKIE_SECRET));
 
 app.use(
   cors({

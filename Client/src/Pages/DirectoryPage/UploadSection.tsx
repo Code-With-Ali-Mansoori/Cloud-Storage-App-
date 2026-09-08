@@ -2,7 +2,6 @@ import { FolderPlus, Upload } from "lucide-react";
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { uploadInBatches } from "../../Apis/uploadApi";
-import ImportFromDrive from "../../components/ImportFromDrive";
 import { useModal } from "../../Contexts/ModalContext";
 import { useGlobalProgress } from "../../Contexts/ProgressContext";
 import { useAuth } from "../../Contexts/AuthContext";
@@ -169,12 +168,6 @@ Upload didn't start to avoid data loss. Upgrade to a higher plan to upload large
             <div className="absolute inset-0 rounded-xl bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
           </button>
 
-          {/* Import Drive Button */}
-          <ImportFromDrive
-            setActionDone={setActionDone}
-            progressMap={progressMap}
-            mobileView={false}
-          />
         </div>
       </div>
 
@@ -214,13 +207,6 @@ Upload didn't start to avoid data loss. Upgrade to a higher plan to upload large
               New Folder
             </span>
           </button>
-
-          {/* Import Drive */}
-          <ImportFromDrive
-            setActionDone={setActionDone}
-            progressMap={progressMap}
-            mobileView={true}
-          />
 
         </div>
       </div>

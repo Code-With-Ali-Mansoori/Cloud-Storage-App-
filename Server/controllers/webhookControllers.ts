@@ -12,7 +12,7 @@ export const razorpayWebhookController = async (req: Request, res: Response, nex
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
 
     const isValidRequest = validateWebhookSignature(
-      JSON.stringify(webhookBody),
+      req.rawBody?.toString("utf8") || JSON.stringify(webhookBody),
       webhookSignature,
       webhookSecret
     );
@@ -22,8 +22,17 @@ export const razorpayWebhookController = async (req: Request, res: Response, nex
     }
 
     const event = webhookBody?.event;
-    const webhookSubscription = webhookBody.payload.subscription.entity;
-    const userId = webhookSubscription.notes.userId;
+    if (typeof event !== "string") {
+      throw new CustomError("Webhook event is missing", StatusCodes.BAD_REQUEST);
+    }
+
+    const webhookSubscription = webhookBody?.payload?.subscription?.entity;
+    const userId = webhookSubscription?.notes?.userId || null;
+
+    if (!webhookSubscription) {
+      res.status(StatusCodes.OK).send("Webhook received and ignored");
+      return;
+    }
 
     const webhookDoc = await Webhook.create({
       userId,

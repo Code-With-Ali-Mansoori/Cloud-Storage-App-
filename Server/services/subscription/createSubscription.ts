@@ -7,12 +7,11 @@ import { razorpayInstance } from "../razorpayService";
 export default async function createSubscription(userId: string, planId: string): Promise<any> {
   const planDetails = getPlanDetailsById(planId);
 
-  // Checking if planId is valid
   if (!planDetails) {
-    throw new CustomError("Plan ID is not valid", StatusCodes.BAD_REQUEST);
+    throw new CustomError("Plan ID is not valid", StatusCodes.NOT_FOUND);
   }
 
-  const subscriptionDoc = await Subscription.findOne({ userId });
+  const subscriptionDoc = await Subscription.findOne({ userId }).sort({ createdAt: -1 });
 
   if (subscriptionDoc) {
     if (subscriptionDoc.status === "active") {
@@ -22,50 +21,64 @@ export default async function createSubscription(userId: string, planId: string)
       );
     }
 
-    // planId is same then return the same subscriptionId
-    if (
-      subscriptionDoc.planId === planId &&
-      subscriptionDoc.status === "created"
-    ) {
-      const razorpaySub = await razorpayInstance.subscriptions.fetch(
-        subscriptionDoc.razorpaySubscriptionId
-      );
-      if (razorpaySub.status === "created") {
+    const isSamePlan = subscriptionDoc.planId === planId;
+    const isPendingState = ["created", "pending"].includes(subscriptionDoc.status);
+
+    if (isPendingState) {
+      let razorpaySub: any = null;
+
+      try {
+        razorpaySub = await razorpayInstance.subscriptions.fetch(
+          subscriptionDoc.razorpaySubscriptionId
+        );
+      } catch {
+        razorpaySub = null;
+      }
+
+      if (isSamePlan && razorpaySub && ["created", "authenticated", "active"].includes(razorpaySub.status)) {
         return {
           status: StatusCodes.CREATED,
-          message: "Subscription already exist in created status.",
+          message: "Subscription already exists.",
           data: { subscriptionId: subscriptionDoc.razorpaySubscriptionId },
         };
-      } else {
+      }
+
+      if (subscriptionDoc.razorpaySubscriptionId) {
+        try {
+          await razorpayInstance.subscriptions.cancel(
+            subscriptionDoc.razorpaySubscriptionId,
+            false
+          );
+        } catch {
+          // Ignore cancel failures here; the webhook will resolve the final state.
+        }
+      }
+
+      let subscription: any;
+      try {
+        subscription = await razorpayInstance.subscriptions.create({
+          plan_id: planId,
+          total_count: 12,
+          notes: { userId: userId.toString() },
+        });
+      } catch (error: any) {
+        console.error("Razorpay create subscription error:", error);
         throw new CustomError(
-          "Subscription is not the same as in Database",
-          StatusCodes.INTERNAL_SERVER_ERROR
+          error?.error?.description ||
+            error?.message ||
+            "Failed to create subscription",
+          StatusCodes.BAD_GATEWAY
         );
       }
-    }
-
-    // User selected different planId
-    if (
-      subscriptionDoc.planId !== planId &&
-      subscriptionDoc.status === "created"
-    ) {
-      // Cancel the old plan from razorpay.
-      await razorpayInstance.subscriptions.cancel(
-        subscriptionDoc.razorpaySubscriptionId
-      );
-      // keeping the DB status as created because creating new again and updating the document.
-      // also another reason cancelling the subscription will trigger the webhook event. (More explanation in webhook controller)
-
-      // Create new selected plan and update the document
-      const subscription = await razorpayInstance.subscriptions.create({
-        plan_id: planId,
-        total_count: 12,
-        notes: { userId: userId.toString() },
-      });
 
       await Subscription.findByIdAndUpdate(subscriptionDoc._id, {
-        planId: planId,
+        planId,
         razorpaySubscriptionId: subscription.id,
+        status: "created",
+        currentPeriodStart: null,
+        currentPeriodEnd: null,
+        startDate: null,
+        endDate: null,
         invoiceId: null,
         invoiceURL: null,
       });
@@ -78,11 +91,24 @@ export default async function createSubscription(userId: string, planId: string)
     }
   }
 
-  const subscription = await razorpayInstance.subscriptions.create({
-    plan_id: planId,
-    total_count: 12,
-    notes: { userId: userId.toString() },
-  });
+  let subscription: any;
+  try {
+  
+    subscription = await razorpayInstance.subscriptions.create({
+      plan_id: planId,
+      total_count: 12,
+      notes: { userId: userId.toString() },
+    });
+  } catch (error: any) {
+    
+    console.error("Razorpay create subscription error:", error);
+    throw new CustomError(
+      error?.error?.description ||
+        error?.message ||
+        "Failed to create subscription",
+      StatusCodes.BAD_GATEWAY
+    );
+  }
 
   if (!subscription) {
     throw new CustomError(

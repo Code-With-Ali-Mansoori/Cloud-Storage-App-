@@ -53,7 +53,6 @@ const rateLimiterConfig = {
     loginLimiter: [15, _10Mins, false, true, "Too many login attempts. Please wait 10 minutes before retrying."],
     googleLimiter: [20, _15Mins, false, true, "Too many Google login attempts. Try again after 15 minutes."],
     githubLimiter: [20, _15Mins, false, true, "Too many GitHub login attempts. Try again after 15 minutes."],
-    connectDriveLimiter: [30, _10Mins, true, false, "Too many Drive connection requests. Please wait 10 minutes."],
 
     // User Routes Limiters
     getAllUsersLimiter: [30, _10Mins, true, false, "Too many requests to fetch users. Try again after 10 minutes."],

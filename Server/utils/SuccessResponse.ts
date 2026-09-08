@@ -15,6 +15,7 @@ export default class CustomSuccess {
   }
 
   static send(res: { status: (statusCode: number) => { json: (body: CustomSuccess) => unknown } }, message: string, statusCode = 200, data: unknown = null) {
+    
     const response = new CustomSuccess(message, statusCode, data);
     return res.status(statusCode).json(response);
   }

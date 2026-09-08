@@ -14,7 +14,6 @@ import {
   getSharedFileViaLink,
   getSharedWithMeFiles,
   getUserAccessList,
-  importFromDrive,
   initiateFileUpload,
   renameFile,
   renameFileSharedViaEmail,
@@ -239,10 +238,5 @@ router.patch(
   checkFileSharedViaEmail,
   renameFileSharedViaEmail
 );
-
-// POST /file/drive-import
-// Desc -> Import all files from google Drive
-// Body -> { token: string, filesMetaData: Array, fileForUploading: object }
-router.post("/drive-import", importFromDrive);
 
 export default router;

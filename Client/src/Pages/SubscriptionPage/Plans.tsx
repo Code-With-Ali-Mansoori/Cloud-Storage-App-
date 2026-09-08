@@ -2,7 +2,7 @@ import { Check, Crown, Sparkles, Zap } from "lucide-react";
 import React, { useState } from "react";
 import { handleCreateSubscription } from "../../Apis/subscriptionApi";
 import { useAuth } from "../../Contexts/AuthContext";
-import RedirectModal from "../../components/Modals/RedirectModal";
+import { openRazorpayPopup } from "../../Utils/openRazorpayPopup";
 
 export interface PlanItem {
   id: {
@@ -43,7 +43,7 @@ export const monthlyPlans: PlanItem[] = [
   },
   {
     id: {
-      test: "plan_Ra0GqWQ6p0ffYM",
+      test: "plan_TZaKu2kTzSx8WR",
       live: "plan_RWtFksDzZOsg2V",
     },
     name: "Pro",
@@ -63,7 +63,7 @@ export const monthlyPlans: PlanItem[] = [
   },
   {
     id: {
-      test: "plan_Ra0Hyby0MmmZyU",
+      test: "plan_TZaLluzxsW7chm",
       live: "plan_RWtGxMLUNKVu35",
     },
     name: "Premium",
@@ -104,7 +104,7 @@ export const yearlyPlans: PlanItem[] = [
   },
   {
     id: {
-      test: "plan_Ra0HCHX7tNXrQl",
+      test: "plan_TZaMhqA8y2DOeH",
       live: "plan_RWtGEM0EVl0gJE",
     },
     name: "Pro",
@@ -126,7 +126,7 @@ export const yearlyPlans: PlanItem[] = [
   },
   {
     id: {
-      test: "plan_Ra0IGCFRabuW1y",
+      test: "plan_TZaNS6aV2OEpXS",
       live: "plan_RWtGgZRP6VnyUc",
     },
     name: "Premium",
@@ -154,8 +154,6 @@ export interface PlansProps {
 const Plans: React.FC<PlansProps> = ({ hasActivePlan }) => {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
-  const [showRedirectModal, setShowRedirectModal] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState("");
   const { user } = useAuth();
   const modeKey = (user?.razorpayMode as "live" | "test") || "test";
 
@@ -164,22 +162,17 @@ const Plans: React.FC<PlansProps> = ({ hasActivePlan }) => {
     try {
       const res = await handleCreateSubscription(planId);
       if (res.success && res.data && user?._id) {
-        const subscriptionId = res.data.subscriptionId;
-        const baseUrl = window.location.origin || "http://localhost:5173";
-        const url = `${baseUrl}/plans?subscriptionId=${subscriptionId}&userId=${user._id}`;
-        setRedirectUrl(url);
-        setShowRedirectModal(true);
+        openRazorpayPopup({
+          subscriptionId: res.data.subscriptionId,
+          userId: user._id,
+          razorpayMode: user.razorpayMode,
+        });
       }
       setLoadingPlanId(null);
     } catch (error) {
       console.error("Subscription error:", error);
       setLoadingPlanId(null);
     }
-  };
-
-  const handleCloseModal = () => {
-    setShowRedirectModal(false);
-    setRedirectUrl("");
   };
 
   const currentPlans = billingCycle === "monthly" ? monthlyPlans : yearlyPlans;
@@ -387,12 +380,6 @@ const Plans: React.FC<PlansProps> = ({ hasActivePlan }) => {
         </div>
       </div>
 
-      {/* Redirect Modal */}
-      <RedirectModal
-        isOpen={showRedirectModal}
-        onClose={handleCloseModal}
-        redirectUrl={redirectUrl}
-      />
     </>
   );
 };

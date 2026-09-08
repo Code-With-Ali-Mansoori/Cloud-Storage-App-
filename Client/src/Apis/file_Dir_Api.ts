@@ -45,21 +45,3 @@ export const createDirectory = async (dirId: string | null | undefined, director
   }
 };
 
-export interface DriveConnectParams {
-  token: string;
-  filesMetaData: any[];
-  fileForUploading?: any;
-}
-
-export const driveConnect = async ({ token, filesMetaData, fileForUploading }: DriveConnectParams): Promise<ApiResponse> => {
-  try {
-    const response = await axios.post("/file/drive-import", {
-      token,
-      filesMetaData,
-      fileForUploading,
-    });
-    return response.data;
-  } catch (error: any) {
-    return error?.response?.data || { success: false, message: error.message };
-  }
-};

@@ -476,31 +476,3 @@ export const renameFileSharedViaLink = async (req: any, res: Response, next: Nex
   }
 };
 
-export const importFromDrive = async (req: any, res: Response, next: NextFunction): Promise<any> => {
-  const { rootDirId, _id, maxStorageLimit } = req.user;
-  const { token, filesMetaData, fileForUploading } = req.body;
-  if (
-    !token ||
-    !Array.isArray(filesMetaData) ||
-    filesMetaData.length === 0 ||
-    !fileForUploading
-  )
-    throw new CustomError("Invalid input data", StatusCodes.BAD_REQUEST);
-
-  try {
-    const result = await FileServices.ImportFileFromGoogleService(
-      rootDirId,
-      maxStorageLimit,
-      _id,
-      fileForUploading,
-      filesMetaData,
-      token
-    );
-
-    return CustomSuccess.send(res, "", StatusCodes.CREATED, {
-      result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};

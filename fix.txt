@@ -2,9 +2,16 @@ Bug and Problem in App Features
 
 1. Github OAuth problem ✅ Solved
 2. Problem occur when OTP based Login => SEARCH_INDEX_NOT_FOUND ✅ Solved
-3. SHare Feature problem ✅ Solved
+3. Share data Feature problem ✅ Solved
+4. Subscription - Razorpay is also not working ✅ Solved
+5. Also Having many problem in Browser ✅ Solved
 
-1. OTP Via Resend to other Email -> To send emails to other recipients, please verify a domain at resend.com/  domains, and change the `from` address to an email using this domain.
-2. Google Drive Import Problem 
-3. Subscription - Razorpay is also not working 
-4. Also Having many problem in Browser 
+6. OTP Via Resend to other Email -> To send emails to other recipients, please verify a domain at resend.com/  domains, and `change the from` address to an email using this domain.
+
+################################################################
+Test Mode - Verified Razorpay Card Credentials 
+Card No : 4718 6091 0820 4366
+Type : Domestic (India)
+Cards Type : Credit Card
+CVV & Valid Date : Use a random CVV and any future date
+################################################################

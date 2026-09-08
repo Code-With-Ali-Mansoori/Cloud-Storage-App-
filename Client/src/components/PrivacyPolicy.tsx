@@ -99,16 +99,6 @@ export default function PrivacyPolicy() {
             <li>Legal compliance (if applicable)</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3">Google Drive Access (Read-Only)</h3>
-          <p className="mb-2">If you authorize Google Drive access:</p>
-          <ul className="mb-6 space-y-1">
-            <li>We only access files you select for download</li>
-            <li>Access is read-only</li>
-            <li>We do not modify, delete, or upload files to your Google Drive</li>
-            <li>We do not store your Google Drive content except for the files you choose to import</li>
-            <li>All interactions comply with Google API Services User Data Policy</li>
-          </ul>
-
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. How We Use Your Information</h2>
           <p className="mb-2">We use the data we collect only for:</p>
           <ul className="mb-3 space-y-1">
@@ -155,7 +145,6 @@ export default function PrivacyPolicy() {
           <h3 className="text-xl font-semibold text-gray-900 mb-2">6.3. Google OAuth</h3>
           <ul className="mb-3 space-y-1">
             <li>For user login and authentication</li>
-            <li>Optional Google Drive read-only access</li>
           </ul>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-2">6.4. GitHub OAuth</h3>

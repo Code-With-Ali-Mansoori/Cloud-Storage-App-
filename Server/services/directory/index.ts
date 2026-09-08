@@ -147,12 +147,6 @@ const deleteDirectoryService = async (dirId: string, userId: string): Promise<vo
     if (files.length > 1) {
       const keys: Array<{ Key: string }> = [];
       files.map((file: any) => {
-        if (file.googleFileId && file.pdfKey) {
-          keys.push({
-            Key: file.pdfKey,
-          });
-        }
-
         keys.push({
           Key: file.originalKey,
         });

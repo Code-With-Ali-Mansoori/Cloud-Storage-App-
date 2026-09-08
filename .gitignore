@@ -1,6 +1,7 @@
 Client/node_modules/
 Client/.env
 
+./fix.txt
 
 Server/.env
 Server/node_modules/

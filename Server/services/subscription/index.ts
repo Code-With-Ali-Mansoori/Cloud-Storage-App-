@@ -20,6 +20,8 @@ export const createRazorpaySubscriptionService = async (planId: string, userId: 
     notes: { userId: userId.toString() },
   });
 
+  console.log('create Subscription Service Resp => ',razorpayResponse);
+
   return {
     data: razorpayResponse?.status === "created" ? razorpayResponse : null,
   };
@@ -39,7 +41,10 @@ export const cancelSubscriptionService = async (subscriptionId: string): Promise
  */
 const handleNewSubscriptionCreation = async (userId: string, planId: string, status: string): Promise<any> => {
   const { data } = await createRazorpaySubscriptionService(planId, userId);
+  console.log('handleNewSubscriptionCreation Services => ', data);
+  
   if (!data) {
+    console.log('Failed to create subscription');
     throw new CustomError(
       "Failed to create subscription",
       StatusCodes.BAD_REQUEST
@@ -59,6 +64,7 @@ const handleNewSubscriptionCreation = async (userId: string, planId: string, sta
     status: status,
   });
 
+  console.log('Created new subscription : ', data.id);
   return { newSubscriptionId: data.id };
 };
 

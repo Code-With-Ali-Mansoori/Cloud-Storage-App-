@@ -87,8 +87,8 @@ export const logoutAll = async (): Promise<ApiResponse> => {
 
 export const isAuthenticated = async (): Promise<ApiResponse> => {
   try {
-    const response = await axios.get("/user");
-    return { success: true, ...response.data };
+    const response = await axios.get("/auth/status");
+    return response.data;
   } catch (error: any) {
     return error?.response?.data || { success: false, message: error.message };
   }

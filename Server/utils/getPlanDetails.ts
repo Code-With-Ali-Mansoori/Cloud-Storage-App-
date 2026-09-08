@@ -89,8 +89,8 @@ const LIVE_PLANS = {
 };
 
 const TEST_PLANS = {
-  plan_Ra0GqWQ6p0ffYM: {
-    id: "plan_Ra0GqWQ6p0ffYM",
+  plan_TZaKu2kTzSx8WR: {
+    id: "plan_TZaKu2kTzSx8WR",
     name: "Pro",
     tagline: "For Students & Freelancers",
     price: 299,
@@ -111,8 +111,8 @@ const TEST_PLANS = {
     },
   },
 
-  plan_Ra0Hyby0MmmZyU: {
-    id: "plan_Ra0Hyby0MmmZyU",
+  plan_TZaLluzxsW7chm: {
+    id: "plan_TZaLluzxsW7chm",
     name: "Premium",
     tagline: "For Professionals & Creators",
     price: 699,
@@ -133,8 +133,8 @@ const TEST_PLANS = {
     },
   },
 
-  plan_Ra0HCHX7tNXrQl: {
-    id: "plan_Ra0HCHX7tNXrQl",
+  plan_TZaMhqA8y2DOeH: {
+    id: "plan_TZaMhqA8y2DOeH",
     name: "Pro",
     tagline: "For Students & Freelancers",
     price: 2999,
@@ -155,8 +155,8 @@ const TEST_PLANS = {
     },
   },
 
-  plan_Ra0IGCFRabuW1y: {
-    id: "plan_Ra0IGCFRabuW1y",
+  plan_TZaNS6aV2OEpXS: {
+    id: "plan_TZaNS6aV2OEpXS",
     name: "Premium",
     tagline: "For Professionals & Creators",
     price: 6999,
@@ -207,6 +207,8 @@ export const getPlanDetailsById = (planId: string): PlanDetails | null => {
         maxDevices: 1,
       },
     };
+
+  // console.log(plans[planId]);
   return plans[planId] || null;
 };
 

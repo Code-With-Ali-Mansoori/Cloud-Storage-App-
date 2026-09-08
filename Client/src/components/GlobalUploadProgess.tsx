@@ -25,7 +25,7 @@ export function GlobalUploadProgress() {
         
         showModal(
           "Success",
-          "Files have been uploaded successfully. You can find them in the 'Google Drive' folder at the root directory.",
+          "Files have been uploaded successfully. You can find them in your root directory.",
           "success",
         )
       }, 2000)
@@ -122,7 +122,7 @@ export function GlobalUploadProgress() {
             }`} />
             <span className="text-xs text-gray-500">
               {isFinished 
-                ? "Files are now available in your drive" 
+                ? "Files are now available in your storage" 
                 : "Upload in progress, please wait..."
               }
             </span>

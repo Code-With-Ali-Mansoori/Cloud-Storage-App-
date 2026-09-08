@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { confirmSubscription } from "../Apis/subscriptionApi";
 
 declare const Razorpay: any;
 
@@ -31,39 +32,62 @@ export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: Open
   }
 
   let waitingToastId: string | number | null = null;
+  let confirmationAttempts = 0;
+  let completed = false;
+  let cancelled = false;
   const eventSource = new EventSource(
     `${import.meta.env.VITE_BACKEND_URL}/events?userId=${userId}`
   );
 
+  const finishActivation = (plan?: string) => {
+    if (completed) return;
+    completed = true;
+    if (waitingToastId) toast.dismiss(waitingToastId);
+    eventSource.close();
+    sessionStorage.setItem(
+      "subscription-activation-toast",
+      JSON.stringify({ plan })
+    );
+    window.location.assign("/plans");
+  };
+
+  const pollSubscriptionStatus = async () => {
+    if (completed || cancelled) return;
+    confirmationAttempts += 1;
+
+    let result;
+    try {
+      result = await confirmSubscription(subscriptionId);
+    } catch {
+      result = { data: { active: false } };
+    }
+    if (result.data?.active) {
+      finishActivation();
+      return;
+    }
+
+    if (confirmationAttempts >= 30) {
+      if (waitingToastId) toast.dismiss(waitingToastId);
+      eventSource.close();
+      toast.error("Payment confirmation timed out", {
+        description: "Your payment may still be processing. Please refresh shortly.",
+        duration: 7000,
+      });
+      return;
+    }
+
+    window.setTimeout(pollSubscriptionStatus, 2000);
+  };
+
   eventSource.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === "subscriptionActivated") {
-      if (waitingToastId) toast.dismiss(waitingToastId);
-      toast.success("Your subscription is now active!", {
-        description: `You now have access to ${data.plan} features`,
-        duration: 5000,
-        action: {
-          label: "View Details",
-          onClick: () => (window.location.href = "/plans"),
-        },
-        style: {
-          background: "#ffffff",
-          color: "#065f46",
-          border: "1px solid #e5e7eb",
-          borderRadius: "16px",
-          boxShadow:
-            "0 10px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)",
-          padding: "20px",
-          fontWeight: "500",
-        },
-      });
-      eventSource.close();
+      finishActivation(data.plan);
     }
   };
 
   eventSource.onerror = (err) => {
     console.error("SSE error:", err);
-    if (waitingToastId) toast.dismiss(waitingToastId);
     eventSource.close();
   };
 
@@ -73,7 +97,7 @@ export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: Open
     description: "Subscribe to premium storage plan",
     image: "https://dzdw2zccyu2wu.cloudfront.net/overview/readme-typing.svg",
     subscription_id: subscriptionId,
-    handler: async function (response: any) {
+    handler: function () {
       waitingToastId = toast.loading("Processing payment...", {
         description: "Please wait while we confirm your payment",
         style: {
@@ -87,9 +111,11 @@ export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: Open
           fontWeight: "500",
         },
       });
+      void pollSubscriptionStatus();
     },
     modal: {
       ondismiss: function () {
+        cancelled = true;
         if (waitingToastId) toast.dismiss(waitingToastId);
         toast.info("Payment window closed", {
           description: "You cancelled the payment process.",
@@ -111,6 +137,7 @@ export function openRazorpayPopup({ subscriptionId, userId, razorpayMode }: Open
   });
 
   rzp.on("payment.failed", function (response: any) {
+    cancelled = true;
     if (waitingToastId) toast.dismiss(waitingToastId);
     toast.error("Payment failed", {
       description: "There was an issue processing your payment",

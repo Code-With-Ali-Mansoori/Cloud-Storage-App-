@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { extname } from "node:path";
+import mongoose from "mongoose";
 import Directory from "../../models/dirModel";
 import File from "../../models/fileModel";
 import User from "../../models/userModel";
@@ -14,13 +15,6 @@ import {
   getFileContentLength,
   initiateMultipartUpload,
 } from "./s3Services";
-import mongoose from "mongoose";
-import { getGoogleFileSize } from "./getGoogleFileSize";
-import {
-  getExportMimeType,
-  getFileExtension,
-} from "../../utils/getExtension&MimeType";
-import { fetchAndUpload } from "./fetchAndUpload";
 import { formatFileSize } from "../../utils/formatFileSize";
 
 export const updateParentDirectorySize = async (
@@ -313,15 +307,9 @@ const deleteFileService = async (id: string, userId: string): Promise<any> => {
     throw new CustomError("File not found", StatusCodes.NOT_FOUND);
   }
 
-  if (file.googleFileId && file.pdfKey) {
-    await deleteS3Objects({
-      Keys: [{ Key: file.originalKey }, { Key: file.pdfKey }],
-    });
-  } else {
-    await deleteS3Object({
-      Key: file.originalKey,
-    });
-  }
+  await deleteS3Object({
+    Key: file.originalKey,
+  });
 
   await File.deleteOne({ _id: file._id });
 
@@ -531,174 +519,6 @@ const renameFileByEditorService = async (file: any, name: string): Promise<strin
   return file.name;
 };
 
-const importFileFromGoogleService = async (
-  rootDirId: string,
-  maxStorageLimit: number,
-  userId: string,
-  fileForUploading: any,
-  filesMetaData: any[],
-  token: string
-): Promise<any> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const userRootDir = await Directory.findById(rootDirId)
-      .select("size path")
-      .session(session)
-      .lean();
-    const user = await User.findById(userId).select("maxFileSize").lean();
-
-    if (!userRootDir || !user) {
-      throw new CustomError("Root directory or user not found", StatusCodes.NOT_FOUND);
-    }
-
-    const availableSpace = maxStorageLimit - userRootDir.size;
-
-    // Calculate real sizes for all files
-    const fileSizes = await Promise.all(
-      filesMetaData.map(async (file: any, i: number) => {
-        if (file.sizeBytes && file.sizeBytes > 0) {
-          return file.sizeBytes;
-        }
-        const size = await getGoogleFileSize(file, token);
-        filesMetaData[i].sizeBytes = size;
-        return size;
-      })
-    );
-
-    const invalidFile = filesMetaData.find(
-      (file: any) => file.sizeBytes > user.maxFileSize
-    );
-
-    if (invalidFile) {
-      throw new CustomError(
-        `${invalidFile.name} is too large (${formatFileSize(invalidFile.sizeBytes)}). 
-Your plan allows up to ${formatFileSize(user.maxFileSize)} only. 
-Upload stopped to avoid data loss. Upgrade to upload bigger files.`,
-        StatusCodes.FORBIDDEN
-      );
-    }
-
-    const totalSize = fileSizes.reduce((acc, s) => acc + s, 0);
-
-    if (totalSize > availableSpace) {
-      throw new CustomError(
-        `Not enough storage space. Available: ${formatFileSize(availableSpace)}, Required: ${formatFileSize(totalSize)}.`,
-        StatusCodes.FORBIDDEN
-      );
-    }
-
-    let googleRootDir = await Directory.findOne({
-      name: "Google Drive",
-      userId,
-    }).session(session);
-
-    if (!googleRootDir) {
-      const newId = new mongoose.Types.ObjectId();
-      const createdDirs = await Directory.create(
-        [
-          {
-            _id: newId,
-            name: "Google Drive",
-            parentDirId: rootDirId,
-            userId,
-            path: [...(userRootDir.path || []), newId],
-          },
-        ],
-        { session }
-      );
-      googleRootDir = createdDirs[0];
-    }
-
-    const file = fileForUploading;
-    const id = file.id;
-    const originalName = file.name || id;
-
-    const isGoogleNative = file.mimeType?.startsWith(
-      "application/vnd.google-apps"
-    );
-    const fileId = new mongoose.Types.ObjectId();
-    const ext = getFileExtension(originalName, file.mimeType);
-
-    const downloadUrl = isGoogleNative
-      ? `https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=${getExportMimeType(file.mimeType)}&supportsAllDrives=true`
-      : `https://www.googleapis.com/drive/v3/files/${id}?alt=media&supportsAllDrives=true`;
-
-    const uploads = [
-      fetchAndUpload({
-        url: downloadUrl,
-        headers: { Authorization: `Bearer ${token}` },
-        key: `${fileId}${ext}`,
-        bucket: process.env.AWS_BUCKET || "",
-        contentType: file.mimeType,
-      }),
-    ];
-
-    if (isGoogleNative) {
-      uploads.push(
-        fetchAndUpload({
-          url: `https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=application/pdf&supportsAllDrives=true`,
-          headers: { Authorization: `Bearer ${token}` },
-          key: `${fileId}.pdf`,
-          bucket: process.env.AWS_BUCKET || "",
-          contentType: "application/pdf",
-        })
-      );
-    }
-
-    const [origUpload, pdfUpload] = await Promise.all(uploads);
-
-    const actualSize =
-      file.sizeBytes && file.sizeBytes > 0
-        ? file.sizeBytes
-        : await getGoogleFileSize(file, token);
-
-    const finalName = originalName.includes(".")
-      ? originalName
-      : originalName + ext;
-
-    await File.create(
-      [
-        {
-          _id: fileId,
-          name: finalName,
-          originalKey: origUpload?.key,
-          pdfKey: pdfUpload?.key || null,
-          parentDirId: googleRootDir._id,
-          size: actualSize,
-          userId,
-          googleFileId: id,
-          isUploading: false,
-          isMultipart: false,
-          uploadId: null,
-        },
-      ],
-      { session }
-    );
-
-    await Directory.updateMany(
-      { _id: { $in: [googleRootDir._id, rootDirId] } },
-      { $inc: { size: actualSize } },
-      { session }
-    );
-
-    await session.commitTransaction();
-    session.endSession();
-
-    return {
-      id,
-      success: true,
-      originalKey: origUpload?.key,
-      pdfKey: pdfUpload?.key || null,
-    };
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    throw err;
-  }
-};
-
 export default {
   UploadFileInitiateService: uploadFileInitiateService,
   UploadFileCompleteService: uploadFileCompleteService,
@@ -716,7 +536,6 @@ export default {
   RevokeUserAccessService: revokeUserAccessService,
   GetUserAccessListService: getUserAccessListService,
   RenameFileByEditorService: renameFileByEditorService,
-  ImportFileFromGoogleService: importFileFromGoogleService,
   GetPartPresignedURLService: getPartPresignedURLService,
   UploadFileAbortService: abortUploadService,
 };

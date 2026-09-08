@@ -10,6 +10,7 @@ declare global {
 
     interface Request {
       user?: User | null;
+      rawBody?: Buffer;
     }
 
     namespace Multer {

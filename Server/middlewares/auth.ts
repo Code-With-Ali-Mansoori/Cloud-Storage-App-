@@ -5,10 +5,11 @@ import User from "../models/userModel";
 import CustomError from "../utils/ErrorResponse";
 
 export default async function checkAuth(req: Request & { user?: any }, res: Response, next: NextFunction): Promise<void> {
+  
   const token = req.signedCookies?.token ?? req.cookies?.token;
-
-  if (!token)
+  if (!token) {
     throw new CustomError("No active session found", StatusCodes.UNAUTHORIZED);
+  };
 
   const session = (await redisClient.json.get(`session:${token}`)) as any;
   if (!session) {
@@ -25,6 +26,7 @@ export default async function checkAuth(req: Request & { user?: any }, res: Resp
   }
 
   const user = await User.findById(session.userId).select("-password").lean();
+  
   if (!user) {
     res.clearCookie("token", {
       httpOnly: true,
@@ -38,11 +40,12 @@ export default async function checkAuth(req: Request & { user?: any }, res: Resp
     );
   }
 
-  if (user.isDeleted)
+  if (user.isDeleted) {
     throw new CustomError(
       "User is deactivated or deleted.",
       StatusCodes.FORBIDDEN
     );
+  };
 
   req.user = user;
   next();

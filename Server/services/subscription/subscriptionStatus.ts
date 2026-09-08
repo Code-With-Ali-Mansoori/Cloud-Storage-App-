@@ -19,7 +19,7 @@ export default async function subscriptionStatus(userId: string, userDetails: an
   if (!subscriptionDoc) {
     throw new CustomError(
       "No active subscription found!",
-      StatusCodes.NOT_FOUND
+      StatusCodes.OK
     );
   }
 

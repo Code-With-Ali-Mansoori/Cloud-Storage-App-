@@ -17,16 +17,9 @@ const fileSchema = new Schema(
       ref: "User",
       required: true,
     },
-    // For GoogleDrive file
-    googleFileId: {
-      type: String,
-    },
     originalKey: {
       type: String,
       required: true,
-    },
-    pdfKey: {
-      type: String,
     },
     // For File-Sharing
     sharedViaLink: {

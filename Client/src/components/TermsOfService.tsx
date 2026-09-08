@@ -62,7 +62,6 @@ export default function TermsOfService() {
             <li>Access files across multiple devices</li>
             <li>Share files via public or private links</li>
             <li>Use Google OAuth or GitHub OAuth for login</li>
-            <li>Use Google Drive Read-Only access (only when user authorizes) for downloading files to our server</li>
           </ul>
           <p className="mb-6">We offer both free and paid plans.</p>
 

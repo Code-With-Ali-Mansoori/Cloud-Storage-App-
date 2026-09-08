@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   DeleteAndCreateSession,
+  getSessionStatus,
   loginUser,
   loginWithGithub,
   loginWithGoogle,
@@ -10,6 +11,8 @@ import {
 import { limiter } from "../utils/RateLimiter";
 
 const router = Router();
+
+router.get("/status", getSessionStatus);
 
 // POST /auth/register
 // Desc -> Register a new user.

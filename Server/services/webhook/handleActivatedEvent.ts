@@ -31,10 +31,14 @@ export default async function handleActivatedEvent(eventBody: any): Promise<stri
 
     if (oldSubscription) {
       // Cancel old Razorpay subscription
-      await razorpayInstance.subscriptions.cancel(
-        oldSubscription.razorpaySubscriptionId,
-        false // cancels the subscription immediately, not at the end of the cycle.
-      );
+      try {
+        await razorpayInstance.subscriptions.cancel(
+          oldSubscription.razorpaySubscriptionId,
+          false // cancels the subscription immediately, not at the end of the cycle.
+        );
+      } catch (error) {
+        console.error("Failed to cancel the previous Razorpay subscription:", error);
+      }
 
       // Remove old subscription record
       await Subscription.deleteOne({ _id: oldSubscription._id });
@@ -42,10 +46,15 @@ export default async function handleActivatedEvent(eventBody: any): Promise<stri
   }
 
   // update the user subscription document
-  const invoiceId = eventBody.payload.payment.entity.invoice_id;
-  const invoiceURL = invoiceId
-    ? await fetchRazorpayInvoiceUrl(invoiceId)
-    : null;
+  const invoiceId = eventBody.payload.payment?.entity?.invoice_id || null;
+  let invoiceURL = null;
+  if (invoiceId) {
+    try {
+      invoiceURL = await fetchRazorpayInvoiceUrl(invoiceId);
+    } catch (error) {
+      console.error("Failed to fetch Razorpay invoice URL:", error);
+    }
+  }
   const updateSubscriptionDoc = await Subscription.findOneAndUpdate(
     {
       userId,
